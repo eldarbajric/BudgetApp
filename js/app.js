@@ -1,7 +1,7 @@
 
 var budgetController = (function () {
 
-    var Expense = function(id, description, value) {
+    var Expense = function(id, description, value,) {
         this.id = id;
         this.description = description;
         this.value = value;
@@ -32,7 +32,8 @@ var budgetController = (function () {
             inc: 0
         },
         budget: 0,
-        percentage: -1
+        percentage: -1,
+        itemPercentage: -1
     };
 
     return {
@@ -53,6 +54,13 @@ var budgetController = (function () {
             }else if(type === 'inc'){
                 newItem = new Income(ID, des, val);
             } 
+            // Calculate item percentage
+            if(data.totals.exp > 0) {
+                data.itemPercentage = Math.round((val / data.totals.exp) * 100);
+                
+            }else {
+                data.percentage = -1;
+            }
 
             //Push it into our data structure
             data.allItems[type].push(newItem);
@@ -71,16 +79,24 @@ var budgetController = (function () {
                 data.budget = data.totals.inc - data.totals.exp;
 
             // Calculate the percentage of income that we spent
-                data.percentage = Math.round((data.totals.exp / data.totals.inc) * 100);
+                if(data.totals.inc > 0) {
+                    data.percentage = Math.round((data.totals.exp / data.totals.inc) * 100);
+                    
+                }else {
+                    data.percentage = -1;
+                }
+                
 
         },
+
 
         getBudget: function () {
             return {
                 budget: data.budget,
                 totalInc: data.totals.inc,
                 totalExp: data.totals.exp,
-                percentage: data.percentage
+                percentage: data.percentage,
+                itemPercentage: data.itemPercentage
             };
         },
 
@@ -101,6 +117,12 @@ var UIController = (function () {
         inputBtn: '.add__btn',
         incomeContainer: '.income__list',
         expensesContainer: '.expenses__list',
+        itemPercentage: '.item__percentage',
+        budgetLabel: '.budget__value',
+        incomeLabel: '.budget__income--value',
+        expenseLabel: '.budget__expenses--value',
+        percentageLabel: '.budget__expenses--percentage'
+
     };
 
 
@@ -133,6 +155,7 @@ var UIController = (function () {
             newHtml = html.replace('%id%', obj.id);
             newHtml = newHtml.replace('%description%', obj.description);
             newHtml = newHtml.replace('%value%', obj.value);
+            
 
             // Insert HTML into the DOM
             document.querySelector(element).insertAdjacentHTML('beforeend', newHtml);
@@ -141,6 +164,7 @@ var UIController = (function () {
 
         },
 
+        // Clear input fields after input has been made by user
         clearFields: function() {
             var fields, fieldsArr;
 
@@ -153,6 +177,21 @@ var UIController = (function () {
             });
 
             fieldsArr[0].focus();
+        },
+
+        displayBudget: function (obj) {
+
+            document.querySelector(DOMstrings.budgetLabel).textContent = obj.budget;
+            document.querySelector(DOMstrings.incomeLabel).textContent = obj.totalInc;
+            document.querySelector(DOMstrings.expenseLabel).textContent = obj.totalExp;
+            
+            if(obj.percentage > 0) {
+                document.querySelector(DOMstrings.percentageLabel).textContent = obj.percentage + '%';
+            }else {
+                document.querySelector(DOMstrings.percentageLabel).textContent = '--%';
+            }
+            
+        
         },
 
         getDOMstrings: function () {
@@ -186,8 +225,18 @@ var controller = (function (budgetCtrl, UICtrl) {
 
         // 2. Return the budget
         var budget = budgetCtrl.getBudget();
-        console.log(budget);
+        
         // 3. Display the budget on the UI
+        UICtrl.displayBudget(budget);
+
+    };
+
+    var updatePercentages = function () {
+        // 1. Calculate percentages
+
+        // 2. Read percentages from the budget controller
+
+        // 3. Update the UI with the new percentages
 
     };
 
@@ -212,8 +261,11 @@ var controller = (function (budgetCtrl, UICtrl) {
 
             // 5. Calculate and update budget
             updateBudget();
+
+            // 6. Calculate and update itemPercentages
+            updatePercentages(); // Add this to the deletItem function when you write it
         }
-        
+        //aa
         
 
     };
@@ -221,6 +273,12 @@ var controller = (function (budgetCtrl, UICtrl) {
     return {
         init: function () {
             console.log('Application has started')
+            UICtrl.displayBudget({
+                budget: 0,
+                totalInc: 0,
+                totalExp:  0,
+                percentage: 0
+            });
             setupEventListeners();
             
         }
